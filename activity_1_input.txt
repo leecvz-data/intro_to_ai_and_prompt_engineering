@@ -1,0 +1,114 @@
+========================================================================
+ACTIVITY 1 — PROMPT REHAB  ·  the input to work on
+Prompt Engineering · Python PH x Hacktoberfest 2026
+========================================================================
+
+Paste everything BELOW THE LINE into your AI chat tool, then try the
+prompt at the very bottom. Rebuild that prompt with the four buckets and
+compare.
+
+------------------------------------------------------------------------
+#eventprep — team group chat, last 7 days
+------------------------------------------------------------------------
+
+MON 9:12am · Mika
+ok we're confirmed for the 18th. 2 slots, morning and afternoon. need to
+lock topics by Wednesday or we lose the slots
+
+MON 9:15am · JP
+morning is the beginner track right? that's what we said last time
+
+MON 9:16am · Mika
+yes — beginner AM, intermediate PM
+
+MON 9:31am · Bea
+i can take the beginner one, i still have most of the material from March
+
+MON 10:02am · Ren
+question — is the afternoon slot 90 mins or 2 hours? the form said 90 but
+the email said 2hrs
+
+MON 2:45pm · Carlo
+lunch at that new place near the venue after? 😂
+
+MON 2:46pm · JP
+😂😂
+
+TUE 8:40am · Mika
+reminder, topics due Wednesday. Bea has beginner. who's on afternoon?
+
+TUE 8:55am · Aldrin
+i can do it, but i'm out Fri–Mon so i'd need slides finalised by Thursday
+
+TUE 9:10am · Mika
+ok Aldrin on afternoon
+
+TUE 11:20am · Bea
+we also need a handout, people asked for something printed last time
+
+TUE 11:22am · JP
+how many copies? depends on headcount
+
+TUE 11:25am · Mika
+registration says 60 but walk-ins usually add 20–30
+
+TUE 11:26am · JP
+print 100 to be safe
+
+TUE 3:15pm · Ren
+still waiting on the venue re: projectors in both rooms
+
+WED 9:05am · Aldrin
+actually — can we swap? i'll take beginner, Bea takes afternoon. my March
+material is more intro-level and Bea's new stuff is more advanced
+
+WED 9:20am · Bea
+fine with me
+
+WED 9:22am · Mika
+ok swapped. Aldrin beginner AM, Bea intermediate PM
+
+WED 10:00am · Mika
+topics submitted ✅
+
+WED 2:30pm · Carlo
+do we need our own signup sheet or is the main event registration enough?
+
+WED 2:45pm · Ren
+main reg is enough, they're giving us the list
+
+THU 8:15am · Ren
+venue confirmed — projector in the main room only. afternoon session is in
+the small room, no projector
+
+THU 8:20am · Bea
+so do i rethink the afternoon format? or can we move rooms
+
+THU 8:22am · Mika
+i'll ask. worst case we bring a portable one — Carlo do you still have yours?
+
+THU 8:40am · Carlo
+yeah i think so, let me check
+
+THU 11:00am · JP
+btw handout draft needs to be done by Monday if we're printing 100
+
+THU 11:05am · Aldrin
+i'm out Fri–Mon remember
+
+THU 11:06am · JP
+right
+
+------------------------------------------------------------------------
+THE PROMPT SOMEONE WROTE:
+------------------------------------------------------------------------
+
+    "Summarise this chat for whoever missed it."
+
+------------------------------------------------------------------------
+YOUR TASK (in pairs):
+  1. Rebuild that prompt so all four buckets are filled
+     (WHO · WHAT · WITH WHAT · WHAT GOOD LOOKS LIKE).
+  2. Run the original prompt. Then run yours.
+  3. Compare — what did yours catch that the first one missed?
+------------------------------------------------------------------------

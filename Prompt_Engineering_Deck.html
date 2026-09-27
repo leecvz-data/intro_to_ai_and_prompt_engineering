@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prompt Engineering</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{
+    --ink-deep:#2A2333; --ink:#3E6152; --ink-2:#8AA6D6;
+    --paper:#F1EEE3; --card:#FFFFFF; --line:#DED9CA;
+    --ink-text:#292434; --muted-l:#6C6656; --muted-d:#BAC8BD; --cloud:#EEEBDE;
+    --amber:#E76A5A; --amber-soft:#F8DED7; --amber-line:#EA7A6B;
+    --teal:#3B6152; --teal-soft:#E3EBE3; --rose:#B4544E; --rose-soft:#FBE9E7;
+    --blue:#8AA6D6; --gold:#E7A63C;
+    color-scheme: light;
+    --f-display:"Space Grotesk", "Arial Black", system-ui, sans-serif;
+    --f-body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    --f-mono:"Space Mono", ui-monospace, "SFMono-Regular", monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--ink-deep); font-family:var(--f-body);
+    color:var(--cloud); overflow:hidden; font-size:1.2rem;
+  }
+  .deck{position:fixed; inset:0}
+  .slide{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    justify-content:center; overflow-y:auto; overflow-x:hidden;
+    padding:clamp(22px,4vw,60px);
+    padding-bottom:clamp(64px,8vh,88px);
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .slide:not([hidden]){animation:fade .34s ease both}
+  }
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .slide[hidden]{display:none!important}
+  .slide.dark{background:var(--ink); color:var(--cloud)}
+  .slide.light{background:var(--paper); color:var(--ink-text)}
+  .wrap{width:100%; max-width:1060px; margin-inline:auto}
+
+  .tag{
+    font-family:var(--f-mono); font-weight:700; font-size:clamp(12px,1.35vw,15px);
+    letter-spacing:.14em; text-transform:uppercase; margin:0 0 clamp(12px,2vw,22px);
+  }
+  .light .tag{color:var(--teal)}
+  .dark .tag{color:var(--amber)}
+
+  h1{
+    font-family:var(--f-display); font-weight:700; line-height:1.02;
+    font-size:clamp(2.2rem,5.4vw,3.9rem); margin:0; text-wrap:balance;
+    letter-spacing:-.02em;
+  }
+  h2{
+    font-family:var(--f-display); font-weight:700; line-height:1.05;
+    font-size:clamp(1.6rem,3.7vw,2.6rem); margin:0 0 .5em; text-wrap:balance;
+    letter-spacing:-.02em;
+  }
+  .light h1,.light h2{color:var(--ink-text)}
+  .dark h1,.dark h2{color:#fff}
+  .lead{font-size:clamp(1.25rem,2.4vw,1.85rem); line-height:1.4; margin:.7em 0 0}
+  p{margin:0}
+  .muted{color:var(--muted-l)} .dark .muted{color:var(--muted-d)}
+  .amber{color:var(--amber)} .teal{color:var(--teal)}
+  strong{font-weight:600}
+  em{font-style:italic}
+  .src{font-size:clamp(.84rem,1.3vw,1rem); color:var(--muted-l); line-height:1.4; margin-top:clamp(12px,1.8vw,20px)}
+  .src b{color:var(--teal); font-weight:700}
+
+  /* box motif — .slide is already position:absolute, so it is the containing block */
+  .frame{border:3px solid var(--amber); border-radius:18px; padding:clamp(24px,4vw,60px); width:100%}
+  .frame.center{text-align:center}
+  .hero{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr); gap:clamp(24px,4vw,64px); align-items:center}
+  .deco{position:relative; width:100%; max-width:360px; aspect-ratio:1/1; justify-self:end}
+  .deco i{position:absolute; width:80%; height:80%; border-radius:16px; display:block}
+  .deco i:first-child{right:0; top:0; border:3px solid var(--amber)}
+  .deco i:nth-child(2){left:0; bottom:0; border:3px solid var(--ink-2)}
+  .deco .px{position:absolute; left:0; top:0}
+  .px{position:absolute; display:flex; gap:7px}
+  .px span{width:15px; height:15px; display:block}
+  .px span:nth-child(1){background:var(--amber)}
+  .px span:nth-child(2){background:var(--blue)}
+  .px span:nth-child(3){background:var(--gold)}
+  .toks{display:flex; gap:6px; flex-wrap:wrap}
+  .toks span{width:16px; height:16px; display:block; border-radius:3px}
+
+  .grid{display:grid; gap:clamp(12px,1.6vw,20px)}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:clamp(14px,1.8vw,22px); color:var(--ink-text);
+  }
+  .card.hot{border:2.5px solid var(--amber-line)}
+  .card .k{font-weight:600; font-size:clamp(1.12rem,1.8vw,1.42rem)}
+  .card .d{color:var(--muted-l); font-size:clamp(1.04rem,1.7vw,1.28rem); line-height:1.4}
+
+  .eyebadge{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:2.1em; height:2.1em; border-radius:9px; font-weight:700;
+    font-family:var(--f-display); font-size:clamp(1rem,1.7vw,1.3rem);
+    background:var(--teal-soft); color:var(--teal); flex:none;
+  }
+  .card.hot .eyebadge{background:var(--amber-soft); color:var(--amber)}
+
+  .prompt{
+    font-family:var(--f-mono); font-size:clamp(.9rem,1.45vw,1.1rem); line-height:1.5;
+    background:#26372F; color:#E8ECE2; border-radius:12px;
+    padding:clamp(12px,1.6vw,18px); border:1px solid #38493F; white-space:pre-wrap;
+  }
+  .light .prompt{background:#26372F}
+  .b-who{color:#E8A25A} .b-what{color:#7FC6A9} .b-ctx{color:#8FBCE0} .b-out{color:#E28A34}
+  .plabel{font-weight:700}
+
+  .cols{display:grid; gap:clamp(14px,2vw,26px)}
+  @media(min-width:760px){ .cols.two{grid-template-columns:1fr 1fr} }
+
+  table.tbl{width:100%; border-collapse:collapse; font-size:clamp(1rem,1.75vw,1.3rem)}
+  table.tbl td,table.tbl th{padding:clamp(7px,1vw,11px) clamp(10px,1.4vw,16px); text-align:left}
+  table.tbl thead th{background:var(--ink); color:#fff; font-weight:600}
+  table.tbl tbody tr{background:var(--card)}
+  table.tbl tbody tr:nth-child(even){background:#eef2f5}
+  table.tbl td:first-child{font-weight:600; color:var(--ink-text)}
+  .tblwrap{border:1px solid var(--line); border-radius:12px; overflow:hidden}
+
+  .callout{
+    border-radius:12px; padding:clamp(14px,1.8vw,20px);
+    background:var(--amber-soft); border:1px solid var(--amber-line); color:#5a3c17;
+  }
+  .callout.ink{background:var(--ink); border:none; color:#fff}
+  .callout.ink .amber{color:var(--amber)}
+
+  ol.steps,ul.plain{margin:0; padding:0; list-style:none; display:grid; gap:clamp(9px,1.3vw,14px)}
+  ol.steps li{display:flex; gap:.7em; align-items:flex-start; font-size:clamp(1.14rem,1.9vw,1.46rem); line-height:1.36}
+  ol.steps li .n{
+    flex:none; width:1.7em; height:1.7em; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; font-weight:600; font-size:.8em;
+    background:var(--teal); color:#fff;
+  }
+  ol.steps.amber-n li .n{background:var(--amber)}
+  ul.check li{display:flex; gap:.6em; align-items:flex-start; font-size:clamp(1.14rem,1.85vw,1.44rem); line-height:1.36}
+  ul.check li::before{content:"✓"; color:var(--teal); font-weight:700; flex:none}
+
+  .timer{
+    background:var(--ink); color:#fff; border-radius:14px; padding:clamp(16px,2vw,26px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  }
+  .timer .big{font-family:var(--f-display); font-weight:700; color:var(--amber); font-size:clamp(3rem,7vw,5rem); line-height:1}
+  .timer .lbl{letter-spacing:.2em; font-weight:600; font-size:clamp(.85rem,1.3vw,1rem); margin-top:.3em}
+  .timer .sub{color:var(--cloud); font-size:clamp(.95rem,1.45vw,1.15rem); margin-top:.8em; line-height:1.35}
+
+  .flow{display:flex; flex-wrap:wrap; align-items:stretch; gap:clamp(8px,1vw,12px)}
+  .flow .stage{
+    flex:1 1 150px; background:var(--card); border:1.5px solid var(--line); border-radius:12px;
+    padding:clamp(11px,1.4vw,18px); color:var(--ink-text); display:flex; flex-direction:column; gap:.35em;
+  }
+  .flow .stage .st-k{font-weight:600; font-size:clamp(1.02rem,1.6vw,1.22rem)}
+  .flow .stage .st-tag{font-size:clamp(.86rem,1.3vw,1rem); font-style:italic}
+  .flow .stage.on-now{border-color:var(--teal)} .flow .stage.on-now .st-tag{color:var(--teal)}
+  .flow .stage.on-next{border-color:var(--amber-line)} .flow .stage.on-next .st-tag{color:var(--amber)}
+  .flow .stage.on-far .st-tag{color:var(--muted-l)}
+  .flow .arw{align-self:center; color:var(--muted-l); font-size:1.3rem; font-weight:700}
+
+  .bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:20;
+    display:flex; align-items:center; gap:12px;
+    padding:8px 14px; padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+    pointer-events:none;
+  }
+  .bar>*{pointer-events:auto}
+  .count{
+    font-family:var(--f-mono); font-size:12px; color:#8fa0ad;
+    background:rgba(14,25,34,.55); border:1px solid rgba(255,255,255,.09);
+    padding:5px 10px; border-radius:20px; backdrop-filter:blur(4px);
+    font-variant-numeric:tabular-nums;
+  }
+  .navbtns{margin-left:auto; display:flex; gap:8px}
+  .nav{
+    width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.14);
+    background:rgba(14,25,34,.55); color:#e7edf1; font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);
+  }
+  .nav:hover{background:rgba(226,138,52,.9); border-color:transparent; color:#12202b}
+  .nav:disabled{opacity:.32; cursor:default}
+  .nav:focus-visible,.hintbtn:focus-visible{outline:2px solid var(--amber); outline-offset:2px}
+  .hintbtn{
+    background:rgba(14,25,34,.55); border:1px solid rgba(255,255,255,.09); color:#8fa0ad;
+    font-family:var(--f-mono); font-size:12px; padding:5px 10px; border-radius:20px;
+    cursor:pointer; backdrop-filter:blur(4px);
+  }
+  .progress{position:fixed; left:0; top:0; height:3px; background:var(--amber); z-index:30; width:0; transition:width .25s ease}
+
+  .note{display:none}
+  body.notes .note{
+    display:block; margin-top:clamp(14px,2vw,22px); border-top:1px dashed currentColor;
+    padding-top:.8em; font-size:clamp(.8rem,1.3vw,.95rem); line-height:1.45; opacity:.85;
+    font-family:var(--f-body);
+  }
+  body.notes .light .note{color:var(--muted-l)} body.notes .dark .note{color:var(--muted-d)}
+
+  .hint{font-size:12px; color:var(--muted-d); font-family:var(--f-mono); margin-top:1.6em}
+  .kbd{border:1px solid rgba(255,255,255,.2); border-radius:5px; padding:1px 6px; font-size:.9em}
+  .light .kbd{border-color:var(--line)}
+
+  @media (max-height:800px){
+    .slide{padding-top:clamp(16px,3.2vh,30px); padding-bottom:62px}
+    .tag{margin-bottom:clamp(8px,1.4vh,14px)}
+    h1{font-size:clamp(2rem,4.9vw,3.5rem)}
+    .lead{margin-top:.45em}
+    .card{padding:clamp(11px,1.5vw,18px)}
+    .grid,.cols{gap:clamp(10px,1.4vw,16px)}
+    .callout{padding:clamp(11px,1.5vw,16px)}
+    .src{margin-top:10px}
+  }
+  @media (max-height:620px){
+    body{font-size:1.08rem}
+    h1{font-size:clamp(1.8rem,4.3vw,2.9rem)}
+    .lead{font-size:clamp(1.1rem,2.1vw,1.5rem)}
+    .card .d{font-size:clamp(.95rem,1.5vw,1.12rem)}
+    .card .k{font-size:clamp(1rem,1.6vw,1.22rem)}
+    ol.steps li,ul.check li{font-size:clamp(1rem,1.65vw,1.25rem)}
+    .prompt{font-size:clamp(.82rem,1.3vw,.98rem)}
+    table.tbl{font-size:clamp(.92rem,1.55vw,1.12rem)}
+  }
+  @media (max-width:820px){
+    .hero{grid-template-columns:1fr}
+    .deco{display:none}
+  }
+  @media (max-width:720px){
+    .px{display:none}
+  }
+  @media (max-width:560px){
+    .slide{justify-content:flex-start; padding-top:clamp(30px,9vw,50px)}
+    .grid[style*="repeat(3"],.grid[style*="repeat(4"]{grid-template-columns:1fr!important}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<div class="deck" id="deck">
+
+  <!-- TITLE -->
+  <section class="slide dark">
+    <div class="wrap hero">
+     <div>
+      <p class="tag">Python Philippines · AI Track · Session 1 · Hacktoberfest 2026</p>
+      <h1>Prompt<br>Engineering</h1>
+      <p class="lead" style="color:var(--cloud); max-width:20ch">Writing prompts that hold up when you run them more than once.</p>
+      <p style="margin-top:2.2em; font-weight:600; color:#fff">Lee Mark Chavez</p>
+      <p class="muted" style="font-size:1.05rem">Senior Data Scientist, Accenture</p>
+      <p class="hint">Move: <span class="kbd">←</span> <span class="kbd">→</span> · Notes: <span class="kbd">N</span> · Fullscreen: <span class="kbd">F</span></p>
+     </div>
+     <div class="deco" aria-hidden="true"><i></i><i></i><div class="px"><span></span><span></span><span></span></div></div>
+    </div>
+    <p class="note">Hold this while people settle. Two hours. One promise: everyone leaves with one prompt they'll actually reuse.</p>
+  </section>
+
+  <!-- WHO -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Hello</p>
+      <h1>Who's talking</h1>
+      <div class="grid" style="margin-top:clamp(18px,3vw,32px); gap:clamp(12px,1.8vw,18px)">
+        <div style="display:flex; gap:1em; align-items:baseline">
+          <strong style="min-width:6.5em; color:var(--teal)">Day job</strong>
+          <span>Senior Data Scientist at Accenture — I build AI and automation for European financial institutions.</span>
+        </div>
+        <div style="display:flex; gap:1em; align-items:baseline">
+          <strong style="min-width:6.5em; color:var(--teal)">Teaching</strong>
+          <span>Mentor at Eskwelabs. Trained teams at Ayala, PwC, Nestlé, Aboitiz Power.</span>
+        </div>
+        <div style="display:flex; gap:1em; align-items:baseline">
+          <strong style="min-width:6.5em; color:var(--teal)">Here</strong>
+          <span>MBA from Ateneo. I've hosted PyCon Philippines and PyCon Asia.</span>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:1.8em; font-style:italic">Everything today is built for this room. None of it is recycled client material.</p>
+    </div>
+    <p class="note">60 seconds. The point is why you're credible on this, not your CV.</p>
+  </section>
+
+  <!-- AGENDA -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">The next two hours</p>
+      <h1>Here's the plan</h1>
+      <div style="margin-top:clamp(12px,2.2vw,24px); display:grid; gap:clamp(6px,.9vw,10px)">
+        <div style="display:flex; gap:clamp(12px,2vw,20px); align-items:baseline; padding:clamp(8px,1.1vw,13px) clamp(12px,1.6vw,18px); border-radius:10px; background:var(--card); border:1px solid var(--line)">
+          <span style="font-family:var(--f-mono); font-weight:700; color:var(--teal); min-width:2.9em; font-size:clamp(.98rem,1.45vw,1.15rem)">0:00</span>
+          <span style="flex:1"><strong>Warm-up + how AI actually works</strong> <span class="muted">— the box, and how prompting works</span></span>
+        </div>
+        <div style="display:flex; gap:clamp(12px,2vw,20px); align-items:baseline; padding:clamp(8px,1.1vw,13px) clamp(12px,1.6vw,18px); border-radius:10px; background:var(--amber-soft); border:1px solid var(--amber-line)">
+          <span style="font-family:var(--f-mono); font-weight:700; color:var(--amber); min-width:2.9em; font-size:clamp(.98rem,1.45vw,1.15rem)">0:26</span>
+          <span style="flex:1"><strong>Activity 1 · Prompt Rehab</strong> <span class="muted">— in pairs, your chat tool</span></span>
+          <span style="font-family:var(--f-mono); font-size:.95rem; font-weight:700; color:var(--amber); letter-spacing:.08em; text-transform:uppercase">hands-on</span>
+        </div>
+        <div style="display:flex; gap:clamp(12px,2vw,20px); align-items:baseline; padding:clamp(8px,1.1vw,13px) clamp(12px,1.6vw,18px); border-radius:10px; background:var(--teal-soft); border:1px solid #CBD8CE">
+          <span style="font-family:var(--f-mono); font-weight:700; color:var(--teal); min-width:2.9em; font-size:clamp(.98rem,1.45vw,1.15rem)">0:46</span>
+          <span style="flex:1"><strong>Debrief, then a short break</strong></span>
+          <span style="font-family:var(--f-mono); font-size:.95rem; font-weight:700; color:var(--teal); letter-spacing:.08em; text-transform:uppercase">5 min</span>
+        </div>
+        <div style="display:flex; gap:clamp(12px,2vw,20px); align-items:baseline; padding:clamp(8px,1.1vw,13px) clamp(12px,1.6vw,18px); border-radius:10px; background:var(--card); border:1px solid var(--line)">
+          <span style="font-family:var(--f-mono); font-weight:700; color:var(--teal); min-width:2.9em; font-size:clamp(.98rem,1.45vw,1.15rem)">0:59</span>
+          <span style="flex:1"><strong>Getting better output</strong> <span class="muted">— coach it, and the three checks</span></span>
+        </div>
+        <div style="display:flex; gap:clamp(12px,2vw,20px); align-items:baseline; padding:clamp(8px,1.1vw,13px) clamp(12px,1.6vw,18px); border-radius:10px; background:var(--amber-soft); border:1px solid var(--amber-line)">
+          <span style="font-family:var(--f-mono); font-weight:700; color:var(--amber); min-width:2.9em; font-size:clamp(.98rem,1.45vw,1.15rem)">1:08</span>
+          <span style="flex:1"><strong>Activity 2 · One prompt, fifteen rows</strong> <span class="muted">— the notebook, scored</span></span>
+          <span style="font-family:var(--f-mono); font-size:.95rem; font-weight:700; color:var(--amber); letter-spacing:.08em; text-transform:uppercase">hands-on</span>
+        </div>
+        <div style="display:flex; gap:clamp(12px,2vw,20px); align-items:baseline; padding:clamp(8px,1.1vw,13px) clamp(12px,1.6vw,18px); border-radius:10px; background:var(--amber-soft); border:1px solid var(--amber-line)">
+          <span style="font-family:var(--f-mono); font-weight:700; color:var(--amber); min-width:2.9em; font-size:clamp(.98rem,1.45vw,1.15rem)">1:44</span>
+          <span style="flex:1"><strong>Your turn</strong> <span class="muted">— a prompt for your own task</span></span>
+          <span style="font-family:var(--f-mono); font-size:.95rem; font-weight:700; color:var(--amber); letter-spacing:.08em; text-transform:uppercase">solo</span>
+        </div>
+        <div style="display:flex; gap:clamp(12px,2vw,20px); align-items:baseline; padding:clamp(8px,1.1vw,13px) clamp(12px,1.6vw,18px); border-radius:10px; background:var(--card); border:1px solid var(--line)">
+          <span style="font-family:var(--f-mono); font-weight:700; color:var(--teal); min-width:2.9em; font-size:clamp(.98rem,1.45vw,1.15rem)">1:52</span>
+          <span style="flex:1"><strong>Where this goes</strong> <span class="muted">→ Session 2</span></span>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:clamp(10px,1.6vw,18px); font-style:italic">Beginner-friendly throughout — TAs are on the floor if you get stuck.</p>
+    </div>
+    <p class="note">Set expectations: two hands-on activities (amber), one short block on your own work, one break. Times are approximate — don't read them out, just point at the shape. Reassure the nervous half: TAs, beginner-friendly, no one left behind.</p>
+  </section>
+
+  <!-- POLL + QR -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Before we start</p>
+      <h1>Two quick questions</h1>
+      <div class="cols two" style="margin-top:clamp(16px,2.6vw,28px); align-items:center">
+        <div class="grid" style="gap:clamp(12px,1.6vw,18px)">
+          <div class="card" style="display:flex; gap:1em; align-items:flex-start">
+            <span class="eyebadge">1</span>
+            <div><div class="k">Have you ever saved a prompt to reuse later?</div><div class="d">Yes · No</div></div>
+          </div>
+          <div class="card hot" style="display:flex; gap:1em; align-items:flex-start">
+            <span class="eyebadge">2</span>
+            <div><div class="k">What would you stop doing manually if you could?</div><div class="d">Work, school, or an org — anything counts.</div></div>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <img src="data:image/png;base64,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" alt="Scan to join the live poll" style="width:min(52vw,230px); max-width:100%; border-radius:14px; background:#fff; padding:12px; border:1px solid var(--line)">
+          <p class="teal" style="margin-top:.6em; font-weight:600">Scan to join</p>
+        </div>
+      </div>
+    </div>
+    <p class="note">Q1 first — one tap, gets everyone past the QR. Show Q1 results on click, not immediately, so nobody anchors on early votes. Almost every hand is "no" — that gap is the whole session. Then switch to the Slido tab to show the results. Q2 gives you a task list to point at later and at "Your turn". Name the room out loud: ~40% students, ~60% working.</p>
+  </section>
+
+  <!-- AI DEFINITION -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">First — what is this thing</p>
+      <h1>What is AI?</h1>
+      <div class="cols two" style="margin-top:clamp(16px,2.4vw,26px)">
+        <div class="card">
+          <div class="k teal" style="margin-bottom:.4em">Normal software</div>
+          <div class="d">A person writes the rules, step by step. It only ever does what it was told.</div>
+        </div>
+        <div class="card hot">
+          <div class="k amber" style="margin-bottom:.4em">AI</div>
+          <div class="d">Nobody writes the rules. <strong>The machine learns the pattern</strong> from examples.</div>
+        </div>
+      </div>
+      <p class="lead" style="margin-top:clamp(14px,2vw,22px)"><strong>Machines that learn</strong> a task from data — instead of being told exactly how to do it.</p>
+      <p class="muted" style="margin-top:.8em; font-style:italic">So let's watch a machine learn a pattern — from five examples.</p>
+    </div>
+    <p class="note">Keep it plain. The phrase to land is "the machine learns." Frame it as learning a PATTERN from examples — that flows straight into the German demo and keeps you honest: the table on the next slide is examples you put in the prompt, not a lecture on training data.</p>
+  </section>
+
+  <!-- GERMAN PUZZLE -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Watch a machine learn a pattern</p>
+      <h1>Five examples I put in my prompt</h1>
+      <div class="tblwrap" style="margin-top:clamp(14px,2.2vw,22px)">
+        <table class="tbl">
+          <thead><tr><th>German</th><th>English</th></tr></thead>
+          <tbody>
+            <tr><td>Ich esse das Huhn.</td><td>I eat the chicken.</td></tr>
+            <tr><td>Ich verkaufe das Huhn.</td><td>I sell the chicken.</td></tr>
+            <tr><td>Ich verkaufe das Schwein.</td><td>I sell the pig.</td></tr>
+            <tr><td>Ich esse das Schaf nicht.</td><td>I do not eat the sheep.</td></tr>
+            <tr><td>Ich jage das Kaninchen.</td><td>I hunt the rabbit.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout" style="margin-top:clamp(12px,1.8vw,18px); display:flex; flex-wrap:wrap; gap:.6em 1.4em; align-items:center">
+        <span style="font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-size:.8em">Now translate:</span>
+        <span style="font-family:var(--f-mono); font-weight:600; font-size:clamp(1rem,1.9vw,1.4rem)">Ich jage das Schwein nicht.</span>
+        <span style="font-family:var(--f-mono); color:var(--amber); font-weight:700; margin-left:auto">? ? ?</span>
+      </div>
+    </div>
+    <p class="note">Say almost nothing. Let them solve it. Take answers from the floor BEFORE revealing. People who speak zero German get it right — that surprise is the teaching moment. Call these EXAMPLES, never "training data": this is few-shot prompting, and it's exactly the box.</p>
+  </section>
+
+  <!-- GERMAN ANSWER -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Watch a machine learn a pattern</p>
+      <h1>You did what the model does</h1>
+      <div class="callout" style="margin-top:clamp(14px,2vw,22px); display:flex; flex-wrap:wrap; gap:.5em 1.4em; align-items:center; background:var(--teal-soft); border-color:var(--teal); color:#22403f">
+        <span style="font-family:var(--f-mono); font-weight:600; font-size:clamp(1rem,1.9vw,1.35rem)">Ich jage das Schwein nicht.</span>
+        <span class="teal" style="font-weight:700; font-size:clamp(1rem,1.9vw,1.35rem); margin-left:auto">I do not hunt the pig.</span>
+      </div>
+      <p class="lead" style="margin-top:1.1em">That sentence is <strong>nowhere</strong> in the five examples. You built it:</p>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr); margin-top:clamp(12px,1.6vw,18px); gap:clamp(10px,1.4vw,16px)">
+        <div class="card"><div class="k"><em>jage</em></div><div class="d">from row 5</div></div>
+        <div class="card"><div class="k"><em>Schwein</em></div><div class="d">from row 3</div></div>
+        <div class="card"><div class="k"><em>nicht</em></div><div class="d">from row 4</div></div>
+      </div>
+      <p class="lead" style="margin-top:1.1em"><strong>It isn't looking anything up. It's continuing a pattern</strong> — the one you just continued.</p>
+    </div>
+    <p class="note">Ninety seconds on next-token prediction. The model reads what's in front of it and predicts what comes next. That "what's in front of it" is the box — the next slide.</p>
+  </section>
+
+  <!-- THE BOX -->
+  <section class="slide dark">
+    <div class="wrap">
+      <div class="frame center" style="border-width:4px; padding-block:clamp(40px,7vw,96px)">
+        <h1 style="font-size:clamp(2.3rem,6vw,4.2rem)">The model only knows<br>what's in the box.</h1>
+      </div>
+    </div>
+    <p class="note">The spine. Return to it at every transition. The box is the context window — everything it can see, and nothing outside. Knowledge files (Session 2) are a way of putting more into the box.</p>
+  </section>
+
+  <!-- PROMPT ENGINEERING DEFINITION -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Now — the skill itself</p>
+      <h1>So what is prompt engineering?</h1>
+      <p class="lead" style="margin-top:.3em">Writing your request so the model gives you what you actually want — the first time.</p>
+      <div class="cols two" style="margin-top:clamp(16px,2.4vw,26px)">
+        <div class="card"><div class="k">It is not</div><div class="d">Magic words. Secret phrases. Code.</div></div>
+        <div class="card hot"><div class="k amber">It is</div><div class="d">Saying clearly what a good colleague would need to do the job.</div></div>
+      </div>
+    </div>
+    <p class="note">One minute. This is the sentence they'll repeat if someone asks them later what the session was about.</p>
+  </section>
+
+  <!-- REASONING · THE QUESTION -->
+  <section class="slide dark">
+    <div class="px" aria-hidden="true" style="right:clamp(22px,4vw,60px); bottom:clamp(30px,11vh,84px)"><span></span><span></span><span></span></div>
+    <div class="wrap">
+      <p class="tag">A fair question</p>
+      <h1>So why learn this at all?</h1>
+      <p class="lead" style="color:var(--cloud); max-width:38ch">The most powerful models forgive a vague prompt. They'll often figure out what you meant anyway.</p>
+      <p style="margin-top:1.4em; font-weight:600; color:#fff; font-size:clamp(1.2rem,2.6vw,1.8rem)">So why not just always use the biggest model?</p>
+      <p class="muted" style="margin-top:1.3em; font-style:italic">Take a minute — shout out your answers.</p>
+    </div>
+    <p class="note">Pose the question and stop. Let the room answer for a minute — someone will say "cost" or "speed," which is exactly where you're going. Then advance to reveal the two reasons.</p>
+  </section>
+
+  <!-- REASONING · THE ANSWER -->
+  <section class="slide dark">
+    <div class="px" aria-hidden="true" style="right:clamp(22px,4vw,60px); top:clamp(30px,11vh,84px)"><span></span><span></span><span></span></div>
+    <div class="wrap">
+      <p class="tag">Why not just use the biggest model</p>
+      <h1 style="margin-bottom:.5em">Two reasons</h1>
+      <div class="cols two" style="margin-top:clamp(6px,1.2vw,14px)">
+        <div class="card"><div class="k teal">Speed</div><div class="d">Lightweight models answer faster. In production, speed is what enterprises pay for.</div></div>
+        <div class="card hot"><div class="k amber">Cost</div><div class="d">You pay per token. The biggest model on every small task gets expensive fast.</div></div>
+      </div>
+      <p class="lead" style="margin-top:clamp(16px,2.2vw,24px)"><strong style="color:#fff">A clear prompt lets a smaller, cheaper, faster model do the job.</strong> That's the skill.</p>
+    </div>
+    <p class="note">Reveal after they've guessed. Speed and cost are the enterprise reasons. The punchline — clarity lets a cheaper model succeed — is the buy-in for the whole session.</p>
+  </section>
+
+  <!-- TOKENS -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">The unit that costs money</p>
+      <h1>Tokens: the model's brain cells</h1>
+      <div class="toks" aria-hidden="true" style="margin:clamp(14px,2vw,20px) 0">
+        <span style="background:var(--teal)"></span><span style="background:var(--ink-2)"></span><span style="background:var(--teal)"></span><span style="background:var(--gold)"></span><span style="background:var(--teal)"></span><span style="background:var(--ink-2)"></span><span style="background:var(--amber)"></span><span style="background:var(--teal)"></span><span style="background:var(--ink-2)"></span><span style="background:var(--teal)"></span><span style="background:var(--gold)"></span><span style="background:var(--ink-2)"></span><span style="background:var(--teal)"></span><span style="background:var(--amber)"></span><span style="background:var(--teal)"></span><span style="background:var(--ink-2)"></span>
+      </div>
+      <p class="lead">A token is a chunk of text — roughly ¾ of a word. The model reads tokens and writes tokens.</p>
+      <div class="cols two" style="margin-top:clamp(14px,2vw,20px)">
+        <div class="card"><div class="k teal">More tokens, better answers</div><div class="d">More context and more reasoning usually means a sharper result.</div></div>
+        <div class="card hot"><div class="k amber">More tokens, bigger bill</div><div class="d">You pay by the token — and a bigger model spends more of them per task.</div></div>
+      </div>
+      <p class="muted" style="margin-top:1em; font-style:italic">The game: a good answer without burning tokens. A clear prompt does exactly that.</p>
+    </div>
+    <p class="note">Ties speed + cost + reasoning together. The pixel row is a stand-in for tokens. Keep it light — no tokenization internals, just "text costs money, clarity saves it."</p>
+  </section>
+
+  <!-- THESIS -->
+  <section class="slide dark">
+    <div class="wrap">
+      <div class="frame" style="padding-block:clamp(36px,6vw,84px)">
+        <p style="font-family:var(--f-display); font-size:clamp(1.45rem,2.9vw,2.25rem); color:var(--cloud); margin-bottom:.3em">Most of what makes a prompt work</p>
+        <h1>is just clear<br>communication.</h1>
+      </div>
+    </div>
+    <p class="note">Say it now. The examples that follow are the proof. Repeat it at the end.</p>
+  </section>
+
+  <!-- CLEAR COMMUNICATION · person vs AI -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">The whole idea</p>
+      <h1>You already know how to do this</h1>
+      <div class="cols two" style="margin-top:clamp(16px,2.4vw,26px)">
+        <div class="card">
+          <div class="k" style="color:var(--teal); margin-bottom:.6em">Asking a person</div>
+          <p style="margin-bottom:.5em"><strong>Vague:</strong> <em>"Can you handle the thing for Friday?"</em></p>
+          <p class="d" style="margin-bottom:1em">→ "…which thing? what do you need from me?"</p>
+          <p style="margin-bottom:.5em"><strong>Clear:</strong> <em>"Can you email the client the final invoice PDF before Friday 5pm, and CC me?"</em></p>
+          <p class="d">→ Done. No back-and-forth.</p>
+        </div>
+        <div class="card hot">
+          <div class="k" style="color:var(--amber); margin-bottom:.6em">Asking the AI</div>
+          <p style="margin-bottom:.5em"><strong>Vague:</strong> <em>"Write something about our launch."</em></p>
+          <p class="d" style="margin-bottom:1em">→ Generic filler. Wrong length, wrong reader.</p>
+          <p style="margin-bottom:.5em"><strong>Clear:</strong> <em>"Write a 3-sentence launch note for our newsletter, friendly tone, focus on the new dashboard."</em></p>
+          <p class="d">→ Usable on the first try.</p>
+        </div>
+      </div>
+      <div class="callout ink" style="margin-top:clamp(14px,2vw,22px)">
+        Same skill. One difference: <strong>a person asks when they're unsure — the AI just guesses.</strong> So you say up front what a good colleague would have asked you.
+      </div>
+    </div>
+    <p class="note">The clearest proof of the thesis. Land it slowly. The vague/clear pairs are deliberately mundane so nobody feels lectured. The punchline — the AI can't ask you to clarify — is why prompting feels like a skill when it's really front-loaded clarity.</p>
+  </section>
+
+  <!-- ANALOGY 1 · WORKING MEMORY -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Communication example · 1 of 3</p>
+      <h1>Working memory</h1>
+      <div class="cols two" style="margin-top:clamp(14px,2.2vw,24px)">
+        <div class="card"><div class="k teal">A person</div><div class="d">Holds only about 4–7 things in mind at once. Bury the key detail in paragraph six and it's gone.</div></div>
+        <div class="card hot"><div class="k amber">The model</div><div class="d">The context window is a hard limit too. Lead with what matters, and cut what it doesn't need.</div></div>
+      </div>
+      <p class="lead" style="margin-top:clamp(12px,1.8vw,20px)"><strong>Don't make it hold more than it can. Put the important part first.</strong></p>
+      <p class="src">Source: Miller, <em>The Magical Number Seven, Plus or Minus Two</em> (Psychological Review, 1956); revised to about <b>4 items — Cowan (2001)</b>. The model's version is the fixed-size context window.</p>
+    </div>
+    <p class="note">One idea: capacity is limited, for people and for models. Same fix — lead with what matters, drop the noise.</p>
+  </section>
+
+  <!-- ANALOGY 2 · SALIENCE MARKERS -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Communication example · 2 of 3</p>
+      <h1>Salience markers</h1>
+      <p class="muted" style="margin-top:.1em">Emphasis tells a listener what matters. Structure does the same for the model.</p>
+      <div class="cols two" style="margin-top:clamp(10px,1.6vw,18px)">
+        <div class="card">
+          <div class="k" style="margin-bottom:.35em">Bland — everything weighs the same</div>
+          <div class="d">summarise the report and pull out the risks and keep it short and use plain language and don't include the appendix and send it to the finance lead</div>
+        </div>
+        <div class="card hot">
+          <div class="k amber" style="margin-bottom:.35em">Marked up — the point jumps out</div>
+          <div class="d"><strong>Task:</strong> Summarise the report for the <strong>finance lead</strong>.<br><strong>Focus:</strong> the <span style="background:var(--amber-soft); padding:0 3px; border-radius:3px">risks</span>.<br><strong>Rules:</strong> short · plain language · <strong>skip the appendix</strong></div>
+        </div>
+      </div>
+      <div class="cols two" style="margin-top:clamp(10px,1.4vw,16px)">
+        <div><p class="muted" style="font-weight:600; font-size:.95rem; margin-bottom:.3em">Markdown</p><div class="prompt" style="font-size:clamp(.84rem,1.3vw,1rem)">## Task
+Summarise for the finance lead.
+
+**Focus:** risks
+**Skip:** the appendix</div></div>
+        <div><p class="muted" style="font-weight:600; font-size:.95rem; margin-bottom:.3em">XML tags</p><div class="prompt" style="font-size:clamp(.84rem,1.3vw,1rem)">&lt;task&gt;Summarise for the finance lead&lt;/task&gt;
+&lt;focus&gt;risks&lt;/focus&gt;
+&lt;skip&gt;the appendix&lt;/skip&gt;</div></div>
+      </div>
+      <p class="src">Source: Anthropic's prompt-engineering docs recommend <b>XML tags</b> to structure prompts; Markdown headings and lists do the same job.</p>
+    </div>
+    <p class="note">Show bland vs marked-up first — the room should FEEL the difference. Then the two ways to mark structure: Markdown (## / ** / -) and XML tags. Both tell the model where the important parts are.</p>
+  </section>
+
+  <!-- ANALOGY 3 · THE LONG MEETING -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Communication example · 3 of 3</p>
+      <h1>The long meeting</h1>
+      <div class="cols two" style="margin-top:clamp(14px,2.2vw,24px); align-items:center">
+        <div>
+          <p class="lead" style="margin-top:0">In a two-hour meeting, the <strong>start</strong> and the <strong>end</strong> stick. The middle blurs.</p>
+          <p style="margin-top:.8em">Long contexts do the same: models are sharpest on what sits at the <strong>beginning or end</strong>, and <span style="background:var(--amber-soft); padding:0 3px; border-radius:3px">miss what's buried in the middle</span>.</p>
+          <p class="muted" style="margin-top:.8em; font-style:italic">So: fresh chat per task, and put the key info first or last.</p>
+        </div>
+        <div style="display:flex; justify-content:center">
+          <svg viewBox="0 0 320 200" style="width:100%; max-width:360px; height:auto" role="img" aria-label="Accuracy is high at the start and end of the context and low in the middle">
+            <line x1="46" y1="20" x2="46" y2="164" stroke="#C9C3B4" stroke-width="1.5"/>
+            <line x1="46" y1="164" x2="304" y2="164" stroke="#C9C3B4" stroke-width="1.5"/>
+            <path d="M56,50 Q175,214 296,60" fill="none" stroke="#3B6152" stroke-width="3"/>
+            <circle cx="175" cy="136" r="5.5" fill="#E76A5A"/>
+            <text x="175" y="126" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="#E76A5A">missed</text>
+            <text x="56" y="182" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#292434">start</text>
+            <text x="175" y="182" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#292434">middle</text>
+            <text x="296" y="182" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#292434">end</text>
+            <text x="18" y="26" font-family="IBM Plex Sans, sans-serif" font-size="10" fill="#6C6656">accuracy</text>
+          </svg>
+        </div>
+      </div>
+      <p class="src">Source: serial-position effect — <b>Murdock (1962)</b>, J. Exp. Psychology (we recall beginnings and ends). In models: <b>Liu et al. (2023), "Lost in the Middle"</b> — a U-shaped accuracy curve across context position (arXiv:2307.03172).</p>
+    </div>
+    <p class="note">The strongest parallel of the three: people and models both lose the middle. The U-curve is the shape both show. This is the honest source for what's loosely called "token / context degradation."</p>
+  </section>
+
+  <!-- WORKED EXAMPLE -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Same request, twice</p>
+      <h1>Watch the difference</h1>
+      <div class="cols two" style="margin-top:clamp(14px,2.2vw,24px)">
+        <div>
+          <p class="muted" style="font-weight:600; margin-bottom:.5em">Prompt A</p>
+          <div class="prompt">Summarise this customer feedback.</div>
+          <p class="d muted" style="margin-top:.7em">Bland, generic, and you still don't know what to do next.</p>
+        </div>
+        <div>
+          <p class="muted" style="font-weight:600; margin-bottom:.5em">Prompt B — the same ask, with the four questions answered</p>
+          <div class="prompt"><span class="plabel b-who">[WHO]</span> You are a product analyst writing for the engineering lead.
+<span class="plabel b-what">[WHAT]</span> Pull the top 3 recurring issues from this feedback.
+<span class="plabel b-ctx">[WITH WHAT]</span> Use only the messages below. Ignore one-off gripes.
+<span class="plabel b-out">[GOOD LOOKS LIKE]</span> 3 bullets, one sentence each, most frequent first. No preamble.</div>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:1.2em; font-style:italic">Prompt B isn't longer for the sake of it. It just answers the four things you'd tell a competent stranger.</p>
+    </div>
+    <p class="note">Run both live if you can, on the same messy input. Don't tidy A up in advance — let the room watch it underperform. This sets up the four buckets and Activity 1.</p>
+  </section>
+
+  <!-- FOUR BUCKETS + RICE -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Anatomy · 0:17–0:26</p>
+      <h1>Every good prompt answers four questions</h1>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr); margin-top:clamp(14px,2.2vw,24px); gap:clamp(10px,1.3vw,16px)">
+        <div class="card">
+          <div style="display:flex; gap:.5em; align-items:center; margin-bottom:.5em"><span class="eyebadge">R</span><span style="font-weight:700; color:var(--teal)">WHO</span></div>
+          <div class="d"><strong>Role.</strong> Who should the AI be, and who is this for?</div>
+        </div>
+        <div class="card">
+          <div style="display:flex; gap:.5em; align-items:center; margin-bottom:.5em"><span class="eyebadge">I</span><span style="font-weight:700; color:var(--teal)">WHAT</span></div>
+          <div class="d"><strong>Instructions.</strong> What exactly is the task?</div>
+        </div>
+        <div class="card">
+          <div style="display:flex; gap:.5em; align-items:center; margin-bottom:.5em"><span class="eyebadge">C</span><span style="font-weight:700; color:var(--teal)">WITH WHAT</span></div>
+          <div class="d"><strong>Context.</strong> What does it need in the box?</div>
+        </div>
+        <div class="card hot">
+          <div style="display:flex; gap:.5em; align-items:center; margin-bottom:.5em"><span class="eyebadge">E</span><span style="font-weight:700; color:var(--amber)">GOOD LOOKS LIKE</span></div>
+          <div class="d"><strong>Expected output.</strong> Format, length, tone, one sample.</div>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:1.2em; font-style:italic">These four are just what you'd tell a competent stranger. The letters spell <strong>RICE</strong>.</p>
+    </div>
+    <p class="note">Walk each card against Prompt B. The buckets are the plain-language version; RICE is the name to carry out the door. Don't drill three acronyms — see next slide.</p>
+  </section>
+
+  <!-- RICE recap -->
+  <section class="slide dark">
+    <div class="wrap">
+      <p class="tag">The name to remember</p>
+      <h1 style="margin-bottom:.6em">RICE</h1>
+      <div class="grid" style="gap:clamp(9px,1.3vw,14px)">
+        <div style="display:flex; gap:1em; align-items:baseline"><span class="amber" style="font-family:var(--f-display); font-weight:700; font-size:clamp(1.4rem,2.6vw,2rem); min-width:1.4em">R</span><span class="lead" style="margin:0"><strong style="color:#fff">Role</strong> — who it should be <span class="muted">· WHO</span></span></div>
+        <div style="display:flex; gap:1em; align-items:baseline"><span class="amber" style="font-family:var(--f-display); font-weight:700; font-size:clamp(1.4rem,2.6vw,2rem); min-width:1.4em">I</span><span class="lead" style="margin:0"><strong style="color:#fff">Instructions</strong> — what to do <span class="muted">· WHAT</span></span></div>
+        <div style="display:flex; gap:1em; align-items:baseline"><span class="amber" style="font-family:var(--f-display); font-weight:700; font-size:clamp(1.4rem,2.6vw,2rem); min-width:1.4em">C</span><span class="lead" style="margin:0"><strong style="color:#fff">Context</strong> — the info it needs <span class="muted">· WITH WHAT</span></span></div>
+        <div style="display:flex; gap:1em; align-items:baseline"><span class="amber" style="font-family:var(--f-display); font-weight:700; font-size:clamp(1.4rem,2.6vw,2rem); min-width:1.4em">E</span><span class="lead" style="margin:0"><strong style="color:#fff">Expected output</strong> — what good looks like <span class="muted">· GOOD LOOKS LIKE</span></span></div>
+      </div>
+      <p class="muted" style="margin-top:1.6em; font-style:italic">CARE and TAPE reorder the same four. Learn one.</p>
+    </div>
+    <p class="note">The take-home. If they remember one thing, it's RICE mapped onto plain questions. The cheatsheet uses RICE too, so it's consistent with what they'll hold.</p>
+  </section>
+
+  <!-- HAVE / WANT / PROMPT -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">A way to look at any task</p>
+      <h1>Have it, want it, bridge it</h1>
+      <div class="flow" style="margin-top:clamp(16px,2.6vw,30px)">
+        <div class="stage on-now"><div class="st-k">What you have</div><div class="st-tag">messy notes, a thread, a row of data</div></div>
+        <div class="arw">→</div>
+        <div class="stage on-next"><div class="st-k">The prompt</div><div class="st-tag">the instruction that connects them</div></div>
+        <div class="arw">→</div>
+        <div class="stage on-now"><div class="st-k">What you want</div><div class="st-tag">the shape the output must take</div></div>
+      </div>
+      <p class="lead" style="margin-top:clamp(16px,2.4vw,26px)"><strong>Most bad prompts are missing the middle — or the right-hand side.</strong></p>
+    </div>
+    <p class="note">One slide, reusable all week. Use it to frame Activity 1: here's the messy input, here's the target shape, write the middle.</p>
+  </section>
+
+  <!-- ACTIVITY 1 title -->
+  <section class="slide dark">
+    <div class="px" aria-hidden="true" style="right:clamp(22px,4vw,60px); bottom:clamp(30px,11vh,84px)"><span></span><span></span><span></span></div>
+    <div class="wrap">
+      <p class="tag">Activity 1 · 0:26–0:46 · in your chat tool</p>
+      <h1>Prompt Rehab</h1>
+      <p class="lead" style="max-width:26ch">Take one weak prompt and rebuild it with the four questions. Then watch what changes.</p>
+    </div>
+    <p class="note">No notebook here — whatever AI tool they already have open. Zero setup, so the first hands-on block can't stall. TAs use this window (and the break) to fix anyone's Colab before Activity 2.</p>
+  </section>
+
+  <!-- ACTIVITY 1 scenario -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Activity 1 · the situation</p>
+      <h1>A week in a group chat</h1>
+      <p class="lead">Your team is running an event. A week of messages: decisions made, side quests, half-answered questions, a role swap nobody flagged, a deadline with no owner. Someone drops in:</p>
+      <div class="prompt" style="margin-top:clamp(14px,2vw,22px); font-size:clamp(.95rem,1.7vw,1.25rem)">"Summarise this chat for whoever missed it."</div>
+      <p class="muted" style="margin-top:1em; font-style:italic">You've all been in this chat. Student org or work team — it reads the same.</p>
+    </div>
+    <p class="note">The scenario is deliberately neutral so students and working professionals decode it equally fast. The chat log is in the session chat and on the printed half-sheet. It hides ~7 traps: a Wednesday role swap, an ownerless handout deadline, an unanswered question, an open loop, a projector problem nobody acts on, a 100-vs-60 contradiction, and banter to drop.</p>
+  </section>
+
+  <!-- ACTIVITY 1 brief -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Activity 1 · your task</p>
+      <h1>Rebuild it, in pairs</h1>
+      <div class="cols two" style="margin-top:clamp(14px,2.2vw,24px); align-items:start">
+        <ol class="steps amber-n">
+          <li><span class="n">1</span><span>Rebuild the prompt so all <strong>four buckets</strong> are filled.</span></li>
+          <li><span class="n">2</span><span>Run the original. Then run yours.</span></li>
+          <li><span class="n">3</span><span>Compare — what did yours catch that the first one missed?</span></li>
+        </ol>
+        <div class="timer">
+          <div class="big">16</div>
+          <div class="lbl">MINUTES</div>
+          <div class="sub">Pair with someone you didn't arrive with.</div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Leave this up the whole block. Pair a student with a working professional where you can. Timing calls: at 8 min "you should have run the original by now"; at 13 min "start comparing."</p>
+  </section>
+
+  <!-- ACTIVITY 1 what good looks like -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Activity 1 · what you're aiming for</p>
+      <h1>Does your summary do this?</h1>
+      <ul class="check" style="margin-top:clamp(16px,2.4vw,28px); display:grid; gap:clamp(11px,1.6vw,16px)">
+        <li>Separates what's <strong>decided</strong> from what's <strong>still open</strong></li>
+        <li>Names <strong>who owes what, and by when</strong></li>
+        <li>Flags anything with <strong>no owner</strong></li>
+        <li>Drops the lunch plans and the emojis</li>
+      </ul>
+      <div class="callout ink" style="margin-top:clamp(16px,2.2vw,24px)">
+        The lazy prompt didn't fail for lack of information — <strong class="amber">everything was in the box.</strong> It failed because "summarise" was never defined for this reader.
+      </div>
+    </div>
+    <p class="note">Reveal this after they've had a few minutes, or hold it for the debrief. The closing callout is the real lesson and the bridge to "critique, don't re-ask."</p>
+  </section>
+
+  <!-- DEBRIEF 1 -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Debrief · 0:46–0:54</p>
+      <h1 style="margin-bottom:.7em">Which of the four buckets<br>made the biggest difference?</h1>
+      <div class="grid" style="gap:clamp(10px,1.4vw,15px); max-width:760px">
+        <div class="card" style="border-color:var(--teal)"><div class="k">Most pairs land on <span class="teal">WHAT</span> or <span class="teal">GOOD LOOKS LIKE</span></div></div>
+        <div class="card hot"><div class="k">Did anyone's output get <span class="amber">worse</span>? Over-constraining is real.</div></div>
+      </div>
+    </div>
+    <p class="note">Take three pairs the TAs flagged, not hands up: one who nailed WITH WHAT, one whose output got worse, one still confused. The third is the most valuable share and never volunteers.</p>
+  </section>
+
+  <!-- BREAK -->
+  <section class="slide dark">
+    <div class="wrap" style="max-width:820px">
+      <div class="frame center">
+        <div style="font-family:var(--f-display); font-weight:700; color:var(--amber); font-size:clamp(4.5rem,11vw,7.5rem); line-height:1">5</div>
+        <p class="tag" style="color:#fff; margin-top:.5em; font-size:clamp(14px,1.8vw,20px)">minute break</p>
+        <p class="lead" style="color:var(--cloud); margin-top:.9em">Notebook not open yet? Now's the moment.<br>TAs are by the door.</p>
+      </div>
+    </div>
+    <p class="note">Announce five, expect eight. Use it to triage broken Colabs before Activity 2.</p>
+  </section>
+
+  <!-- CRITIQUE · COACHING -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Iterating · 0:59–1:08</p>
+      <h1>Coach it like an employee</h1>
+      <p class="muted" style="margin-top:.1em">The AI just handed you a rough draft. You're the manager — how do you get a better one back?</p>
+      <div class="cols two" style="margin-top:clamp(12px,2vw,22px); align-items:stretch">
+        <div class="card">
+          <div class="k" style="margin-bottom:.5em">The vague boss</div>
+          <div class="prompt" style="background:#2a1614; border-color:#5a2c28; color:#f2d8d5">"No. Do it again."</div>
+          <div class="d" style="margin-top:.7em">The employee doesn't know what was wrong — so you get the same draft back. Louder isn't clearer.</div>
+        </div>
+        <div class="card hot">
+          <div class="k amber" style="margin-bottom:.5em">The good manager</div>
+          <ol class="steps amber-n">
+            <li><span class="n">1</span><span><strong>Name the problem.</strong> "Paragraph 2 invented a deadline that isn't in the data."</span></li>
+            <li><span class="n">2</span><span><strong>Say what good looks like.</strong> "Use only dates that appear in the source."</span></li>
+            <li><span class="n">3</span><span><strong>Ask for a fix, not a restart.</strong> "Redo that paragraph; keep the rest."</span></li>
+          </ol>
+        </div>
+      </div>
+      <div class="callout ink" style="margin-top:clamp(12px,1.8vw,20px)">
+        Fixing an AI draft is just <strong class="amber">coaching a teammate</strong> — specific, actionable, and you never make them start from zero.
+      </div>
+    </div>
+    <p class="note">The coaching frame: you're the manager, the draft is an employee's first attempt. Live demo — take the weakest Activity 1 output (ask permission) and coach it in two turns on screen. Then point at "consistent" on the next slide.</p>
+  </section>
+
+  <!-- THREE CHECKS -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Before you trust any output</p>
+      <h1>Three questions</h1>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr); margin-top:clamp(16px,2.4vw,26px)">
+        <div class="card"><div class="k teal" style="font-family:var(--f-display); font-size:1.3rem">Accurate?</div><div class="d">Every fact and figure correct against what you know?</div></div>
+        <div class="card"><div class="k teal" style="font-family:var(--f-display); font-size:1.3rem">Complete?</div><div class="d">Anything missing you'd have to add by hand?</div></div>
+        <div class="card hot"><div class="k amber" style="font-family:var(--f-display); font-size:1.3rem">Consistent?</div><div class="d">Would it hold up on the next fifteen inputs — not just this one?</div></div>
+      </div>
+      <div class="callout ink" style="margin-top:clamp(16px,2.2vw,24px)">You can't answer the third one yet. You've run your prompt <strong class="amber">once.</strong> That's the next activity.</div>
+    </div>
+    <p class="note">That closing line is the bridge into Activity 2. Say it, then move.</p>
+  </section>
+
+  <!-- ACTIVITY 2 concept -->
+  <section class="slide dark">
+    <div class="px" aria-hidden="true" style="right:clamp(22px,4vw,60px); bottom:clamp(30px,11vh,84px)"><span></span><span></span><span></span></div>
+    <div class="wrap">
+      <p class="tag">Activity 2 · 1:08–1:32</p>
+      <h1>One prompt, fifteen rows</h1>
+      <p class="lead" style="max-width:30ch">In a chat window, "reusable prompt" is just an idea. Here you watch it become real — and watch it break.</p>
+      <p class="muted" style="margin-top:1.2em">Fifteen support tickets. One prompt. Get a <strong style="color:#fff">summary</strong>, a <strong style="color:#fff">priority</strong>, and a <strong style="color:#fff">next action</strong> for every one.</p>
+      <p style="margin-top:1em; font-weight:600; color:#fff; font-size:clamp(1.05rem,1.9vw,1.35rem)">The notebook scores you. Goal: <span class="amber">15 / 15</span>.</p>
+    </div>
+    <p class="note">This is the payoff of the session. The dataset is 15 synthetic tickets across five teams. Seven are traps built to break a loose prompt (sparse, two issues, resolved, two questions, rambling, and a shouty low-impact one). The notebook grades every answer and prints a report — most people start near 0/15.</p>
+  </section>
+
+  <!-- ACTIVITY 2 tracks -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Activity 2 · pick your path</p>
+      <h1>Two ways in, same lesson</h1>
+      <div class="cols two" style="margin-top:clamp(12px,2vw,22px); align-items:start">
+        <div class="card">
+          <div class="k teal" style="margin-bottom:.6em">Start here · Notebook</div>
+          <ol class="steps"><li><span class="n">1</span><span>Open the Colab link. In the first cell, pick <strong>Gemini</strong> or <strong>Groq</strong> and paste your key. Run Setup.</span></li>
+          <li><span class="n">2</span><span>Edit the prompt in step 2. Only that cell.</span></li>
+          <li><span class="n">3</span><span>Run one ticket, then all fifteen.</span></li>
+          <li><span class="n">4</span><span>Read your score. Fix the prompt, re-run. Aim for <strong>15/15</strong>.</span></li></ol>
+        </div>
+        <div class="card hot">
+          <div class="k amber" style="margin-bottom:.6em">If that won't run · No code</div>
+          <ol class="steps amber-n"><li><span class="n">1</span><span>Open the ticket sheet (Excel or text).</span></li>
+          <li><span class="n">2</span><span>Write your prompt in your usual chat tool.</span></li>
+          <li><span class="n">3</span><span>Paste all fifteen tickets. Ask for a table.</span></li>
+          <li><span class="n">4</span><span>Scan it yourself for the odd ones out.</span></li></ol>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:1em; font-style:italic">Rate limit on Gemini? Switch to Groq in the first cell and re-run Setup — it's faster anyway.</p>
+    </div>
+    <p class="note">Most of the room codes, so the notebook is the default; no-code is a real fallback. One TA on triage (usually keys and rate limits — the fix is flipping PROVIDER to groq), the rest roaming for prompt help. At 19 min have anyone on the no-code path glance at a neighbour's score report — that's the Python pitch, made by a peer.</p>
+  </section>
+
+  <!-- SCAN ALL FIFTEEN -->
+  <section class="slide dark">
+    <div class="wrap">
+     <div class="frame">
+      <h1>Scan all fifteen.</h1>
+      <p class="lead" style="color:var(--cloud); font-family:var(--f-display); font-size:clamp(1.3rem,2.8vw,2rem)">Find the ones that don't match the others.</p>
+      <p class="amber" style="margin-top:1.2em; font-weight:600; font-size:clamp(1.2rem,2.2vw,1.6rem); line-height:1.35">That inconsistency was always in your prompt. You just couldn't see it when you ran it once.</p>
+      <p style="margin-top:1em; color:#fff; font-size:clamp(1.1rem,1.9vw,1.4rem)">Then read the report under the table. It tells you exactly what broke — and on which tickets.</p>
+     </div>
+    </div>
+    <p class="note">Say this BEFORE they run step 4. With the vague seed prompt most people score near 0/15 — format, length and priority failures on almost every row, plus the traps. That low first score is the hook. Then four minutes to fix the prompt and re-run; watching the score climb is the reward.</p>
+  </section>
+
+  <!-- DEBRIEF 2 -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Debrief · 1:32–1:40</p>
+      <h1 style="margin-bottom:.7em">Where did it break?</h1>
+      <div class="grid" style="gap:clamp(10px,1.4vw,15px); max-width:820px">
+        <div class="card" style="border-color:var(--teal)"><div class="k">What was your first score — and your best?</div></div>
+        <div class="card" style="border-color:var(--teal)"><div class="k">Which failure showed up on the most tickets?</div></div>
+        <div class="card hot"><div class="k">Which bucket was missing from your prompt?</div></div>
+      </div>
+      <p class="lead" style="margin-top:clamp(14px,2vw,22px)">Almost always <strong class="amber">GOOD LOOKS LIKE</strong> — unconstrained format is the #1 source of inconsistency at volume.</p>
+    </div>
+    <p class="note">Let them arrive at it. The report groups failures by how many tickets they hit — format and length usually top the list, which is the GOOD LOOKS LIKE bucket. The trap failures (answering a question, trusting the shouty ticket) are the WITH WHAT bucket: rules the model can't guess. Ask who hit 15/15 and what their prompt said.</p>
+  </section>
+
+  <!-- SAVING + BREAK IT -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Keeping it · 1:40–1:44</p>
+      <h1>A prompt you can't find next Tuesday</h1>
+      <p class="lead muted" style="font-family:var(--f-display)">is a prompt you didn't write.</p>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr); margin-top:clamp(14px,2vw,22px)">
+        <div class="card"><div class="k">A text file</div><div class="d">Zero effort. Works.</div></div>
+        <div class="card"><div class="k">A shared team doc</div><div class="d">Your colleagues get it too.</div></div>
+        <div class="card hot"><div class="k">A Gem or Project</div><div class="d">Set up once, same for everyone.</div></div>
+      </div>
+      <div class="callout ink" style="margin-top:clamp(14px,2vw,22px)">
+        <strong class="amber">Now watch it fail.</strong> Ask it something only your team knows — an internal acronym, a real SOP step, last month's numbers. It fills the gap confidently and wrongly.
+      </div>
+    </div>
+    <p class="note">Build a Gem live in ~3 min from a fixed prompt, then break it deliberately. This is where hallucination lands honestly, and it sets up Session 2.</p>
+  </section>
+
+  <!-- YOUR TURN -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Your turn · 1:44–1:52</p>
+      <h1>Pick something you actually do</h1>
+      <p class="muted" style="font-style:italic; margin-bottom:clamp(12px,1.8vw,18px)">Most of you will spend your first year doing something repetitive. This is the habit that makes that year shorter.</p>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr); gap:clamp(10px,1.4vw,15px)">
+        <div class="card"><div class="k teal">At work</div><div class="d">A report, an update, a handover you write every week.</div></div>
+        <div class="card"><div class="k teal">At school / an org</div><div class="d">Readings to summarise, announcements, write-ups.</div></div>
+        <div class="card hot"><div class="k amber">The application you're about to send</div><div class="d">Cover letters, tailoring a CV, follow-ups.</div></div>
+      </div>
+      <ol class="steps" style="margin-top:clamp(12px,1.8vw,18px)">
+        <li><span class="n">1</span><span>Write the prompt — all four buckets. Don't test it yet.</span></li>
+        <li><span class="n">2</span><span>Save it where you'll actually look next week.</span></li>
+        <li><span class="n">3</span><span>Write one line: what you'll check when you first run it for real.</span></li>
+      </ol>
+    </div>
+    <p class="note">Three anchors so nobody sits out; the application card is strongest for students. Say the data-handling line out loud: anonymised or sample data, and strip personal details from a CV before pasting. Step 2 is the most skipped — call it at the 5-min mark.</p>
+  </section>
+
+  <!-- PROGRESSION -->
+  <section class="slide light">
+    <div class="wrap">
+      <p class="tag">Where this goes · 1:52</p>
+      <h1>Two hours gets you two steps</h1>
+      <div class="flow" style="margin-top:clamp(16px,2.6vw,30px)">
+        <div class="stage on-now"><div class="st-k">A good prompt</div><div class="st-tag">today</div></div>
+        <div class="arw">›</div>
+        <div class="stage on-now"><div class="st-k">A prompt you reuse</div><div class="st-tag">today</div></div>
+        <div class="arw">›</div>
+        <div class="stage on-next"><div class="st-k">A prompt that knows your context</div><div class="st-tag">Session 2</div></div>
+        <div class="arw">›</div>
+        <div class="stage on-far"><div class="st-k">A workflow</div><div class="st-tag">the horizon</div></div>
+        <div class="arw">›</div>
+        <div class="stage on-far"><div class="st-k">An agent</div><div class="st-tag">the horizon</div></div>
+      </div>
+      <p class="lead" style="margin-top:clamp(16px,2.4vw,26px)"><strong>AI isn't one skill. Today was the part that repeats.</strong></p>
+    </div>
+    <p class="note">Two minutes. This is for the strongest people in the room, who'd otherwise leave thinking they already knew most of it. Names Session 2 explicitly.</p>
+  </section>
+
+  <!-- CLOSE -->
+  <section class="slide dark">
+    <div class="wrap">
+     <div class="frame">
+      <h1 style="font-size:clamp(2rem,4.6vw,3.3rem)">The box is well organised now.</h1>
+      <p class="lead" style="color:var(--cloud); margin-top:.6em">But it still only holds what you typed. Everything your team actually knows is still outside it.</p>
+      <p style="font-family:var(--f-display); font-weight:600; color:var(--amber); font-size:clamp(1.5rem,2.9vw,2.2rem); margin-top:1em">Putting it in is Session 2.</p>
+      <p style="margin-top:1.6em; font-weight:600; color:#fff">Four buckets — name them. Salamat.</p>
+     </div>
+    </div>
+    <p class="note">Retrieval question before anyone stands up. Say the buckets back — RICE. Point at the card. Then close on the box and hand off.</p>
+  </section>
+
+</div>
+
+<div class="bar">
+  <span class="count" id="count">1 / 37</span>
+  <button class="hintbtn" id="notesBtn" aria-label="Toggle presenter notes">Notes</button>
+  <div class="navbtns">
+    <button class="nav" id="prev" aria-label="Previous slide">‹</button>
+    <button class="nav" id="next" aria-label="Next slide">›</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var i = 0;
+  var countEl = document.getElementById('count');
+  var progEl = document.getElementById('prog');
+  var prevB = document.getElementById('prev');
+  var nextB = document.getElementById('next');
+  var notesB = document.getElementById('notesBtn');
+
+  function clamp(n){ return Math.max(0, Math.min(total-1, n)); }
+  function fromHash(){
+    var m = (location.hash||'').match(/^#(\d+)$/);
+    if(m){ var n = parseInt(m[1],10)-1; if(!isNaN(n)) return clamp(n); }
+    return 0;
+  }
+  function render(){
+    for(var k=0;k<total;k++){ slides[k].hidden = (k!==i); }
+    countEl.textContent = (i+1) + ' / ' + total;
+    progEl.style.width = ((i)/(total-1)*100) + '%';
+    prevB.disabled = (i===0);
+    nextB.disabled = (i===total-1);
+    try{ history.replaceState(null,'','#'+(i+1)); }catch(e){}
+    var act = slides[i];
+    if(act){ act.scrollTop = 0; }
+  }
+  function go(d){ var n = clamp(i+d); if(n!==i){ i=n; render(); } }
+
+  i = fromHash();
+  render();
+
+  prevB.addEventListener('click', function(){ go(-1); });
+  nextB.addEventListener('click', function(){ go(1); });
+  notesB.addEventListener('click', function(){ document.body.classList.toggle('notes'); });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '||e.key==='l'){ go(1); e.preventDefault(); }
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'||e.key==='k'){ go(-1); e.preventDefault(); }
+    else if(e.key==='Home'){ i=0; render(); }
+    else if(e.key==='End'){ i=total-1; render(); }
+    else if(e.key==='n'||e.key==='N'){ document.body.classList.toggle('notes'); }
+    else if(e.key==='f'||e.key==='F'){
+      try{
+        if(!document.fullscreenElement){ if(document.documentElement.requestFullscreen){ document.documentElement.requestFullscreen().catch(function(){}); } }
+        else if(document.exitFullscreen){ document.exitFullscreen().catch(function(){}); }
+      }catch(err){}
+    }
+  });
+
+  var x0=null;
+  document.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    if(x0===null) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    if(Math.abs(dx)>50){ go(dx<0?1:-1); }
+    x0=null;
+  }, {passive:true});
+
+  window.addEventListener('hashchange', function(){ var n=fromHash(); if(n!==i){ i=n; render(); } });
+})();
+</script>
+</body>
+</html>
